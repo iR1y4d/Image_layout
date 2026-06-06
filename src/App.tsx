@@ -11,28 +11,45 @@ export default function App() {
   const pageRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [slots, setSlots] = useState<Slots>([null, null, null]);
-  const [activeSlot, setActiveSlot] = useState<number | null>(null);
   const [busy, setBusy] = useState(false);
-
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
 
-  const openPicker = (index: number) => {
-    setActiveSlot(index);
+  // Check if there is at least one image in the slots
+  const hasImages = slots.some((slot) => slot !== null);
+
+  const openPicker = () => {
     fileInputRef.current?.click();
   };
 
   const onFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file || activeSlot === null) return;
-    const reader = new FileReader();
-    reader.onload = () => {
+    const files = e.target.files;
+    if (!files || files.length === 0) return;
+
+    const fileArray = Array.from(files);
+
+    const filePromises = fileArray.map((file) => {
+      return new Promise<string>((resolve) => {
+        const reader = new FileReader();
+        reader.onload = () => resolve(reader.result as string);
+        reader.readAsDataURL(file);
+      });
+    });
+
+    Promise.all(filePromises).then((newImages) => {
       setSlots((prev) => {
         const next = [...prev];
-        next[activeSlot] = reader.result as string;
+        let imageIdx = 0;
+
+        for (let i = 0; i < next.length; i++) {
+          if (next[i] === null && imageIdx < newImages.length) {
+            next[i] = newImages[imageIdx];
+            imageIdx++;
+          }
+        }
         return next;
       });
-    };
-    reader.readAsDataURL(file);
+    });
+
     e.target.value = "";
   };
 
@@ -42,6 +59,33 @@ export default function App() {
       next[index] = null;
       return next;
     });
+  };
+
+  // Completely resets all slots to null
+  const clearAllImages = () => {
+
+      setSlots([null, null, null]);
+
+  };
+
+  const changeSingleImage = (index: number) => {
+    const tempInput = document.createElement("input");
+    tempInput.type = "file";
+    tempInput.accept = "image/*";
+    tempInput.onchange = (e: any) => {
+      const file = e.target.files?.[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = () => {
+        setSlots((prev) => {
+          const next = [...prev];
+          next[index] = reader.result as string;
+          return next;
+        });
+      };
+      reader.readAsDataURL(file);
+    };
+    tempInput.click();
   };
 
   const capture = useCallback(async () => {
@@ -94,6 +138,7 @@ export default function App() {
         ref={fileInputRef}
         type="file"
         accept="image/*"
+        multiple
         className="hidden-input"
         onChange={onFileChange}
       />
@@ -101,9 +146,23 @@ export default function App() {
       <div className="toolbar">
         <h1 className="toolbar-title">منشئ صفحة الصور</h1>
         <p className="toolbar-sub">
-          اضغط على أي مستطيل أزرق لرفع صورة، ثم صدّر الصفحة كـ PDF أو PNG
+          اضغط على أي مستطيل أزرق فارغ لرفع حتى 3 صور دفعة واحدة، ثم صدّر الصفحة كـ PDF أو PNG
         </p>
         <div className="toolbar-actions">
+          {/* New Clear Button */}
+          <button 
+            className="btn btn-clear" 
+            onClick={clearAllImages} 
+            disabled={!hasImages || busy}
+            style={{ 
+              backgroundColor: hasImages ? "#d9534f" : "#ccc", 
+              color: "#fff",
+              cursor: hasImages ? "pointer" : "not-allowed" 
+            }}
+          >
+            مسح الكل
+          </button>
+          
           <button className="btn btn-pdf" onClick={exportPDF} disabled={busy}>
             {busy ? "جاري التصدير..." : "تصدير PDF"}
           </button>
@@ -114,28 +173,23 @@ export default function App() {
       </div>
 
       <div className="page-scaler">
-        {/* The exported page */}
         <div className="page" ref={pageRef}>
           <div className="bg-streaks" />
-
-          {/* Header rule */}
           <div className="header-rule">
             <span className="rule-line" />
           </div>
 
-          {/* Title */}
           <div className="title-box">
             <span className="title-text">صــور من داخـــل الموقـــع</span>
           </div>
 
-          {/* Three slots */}
           <div className="slots">
             {slots.map((src, i) => (
               <div
                 key={i}
                 className="slot"
                 style={{ backgroundColor: NAVY }}
-                onClick={() => !src && openPicker(i)}
+                onClick={() => !src && openPicker()}
               >
                 {src ? (
                   <>
@@ -145,7 +199,7 @@ export default function App() {
                         className="ov-btn"
                         onClick={(e) => {
                           e.stopPropagation();
-                          openPicker(i);
+                          changeSingleImage(i);
                         }}
                       >
                         تغيير
@@ -164,14 +218,13 @@ export default function App() {
                 ) : (
                   <div className="slot-hint" data-html2canvas-ignore="true">
                     <span className="plus">＋</span>
-                    <span>اضغط لرفع صورة</span>
+                    <span>اضغط لرفع الصور</span>
                   </div>
                 )}
               </div>
             ))}
           </div>
 
-          {/* Bottom bar */}
           <div className="bottom-bar" />
         </div>
       </div>
