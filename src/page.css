@@ -173,7 +173,7 @@ body {
   color: #fff;
   font-size: 26px;
   font-weight: 800;
-  letter-spacing: 1px;
+  letter-spacing: normal;
   line-height: 1;
   white-space: nowrap;
 }

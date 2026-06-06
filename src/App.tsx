@@ -14,6 +14,8 @@ export default function App() {
   const [activeSlot, setActiveSlot] = useState<number | null>(null);
   const [busy, setBusy] = useState(false);
 
+  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+
   const openPicker = (index: number) => {
     setActiveSlot(index);
     fileInputRef.current?.click();
@@ -58,9 +60,11 @@ export default function App() {
     try {
       const canvas = await capture();
       if (!canvas) return;
+      const imgData = canvas.toDataURL("image/png");
+      setPreviewUrl(imgData);
       const link = document.createElement("a");
       link.download = "صور-من-داخل-الموقع.png";
-      link.href = canvas.toDataURL("image/png");
+      link.href = imgData;
       link.click();
     } finally {
       setBusy(false);
@@ -73,6 +77,7 @@ export default function App() {
       const canvas = await capture();
       if (!canvas) return;
       const imgData = canvas.toDataURL("image/png");
+      setPreviewUrl(imgData);
       const pdf = new jsPDF({ orientation: "portrait", unit: "mm", format: "a4" });
       const pageW = pdf.internal.pageSize.getWidth();
       const pageH = pdf.internal.pageSize.getHeight();
@@ -170,6 +175,12 @@ export default function App() {
           <div className="bottom-bar" />
         </div>
       </div>
+      {previewUrl && (
+        <div className="preview-container" style={{ marginTop: 20, textAlign: 'center', background: '#fff', padding: 20, borderRadius: 8, boxShadow: '0 4px 12px rgba(0,0,0,0.1)' }}>
+          <h3 style={{ marginBottom: 10, color: '#0d3a54' }}>معاينة الصورة المصدرة (Export Preview):</h3>
+          <img src={previewUrl} style={{ width: '100%', maxWidth: 400, border: '1px solid #ccc' }} alt="Export preview" />
+        </div>
+      )}
     </div>
   );
 }
