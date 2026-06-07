@@ -14,6 +14,11 @@ export default function App() {
   const [busy, setBusy] = useState(false);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
 
+  // Filter out any null values to see exactly how many uploaded images we have
+  const uploadedImages = slots.filter((slot) => slot !== null) as string[];
+  const uploadedCount = uploadedImages.length;
+  const isExactlyTwo = uploadedCount === 2;
+
   // Check if there is at least one image in the slots
   const hasImages = slots.some((slot) => slot !== null);
 
@@ -63,9 +68,7 @@ export default function App() {
 
   // Completely resets all slots to null
   const clearAllImages = () => {
-
-      setSlots([null, null, null]);
-
+    setSlots([null, null, null]);
   };
 
   const changeSingleImage = (index: number) => {
@@ -149,20 +152,19 @@ export default function App() {
           اضغط على أي مستطيل أزرق فارغ لرفع حتى 3 صور دفعة واحدة، ثم صدّر الصفحة كـ PDF أو PNG
         </p>
         <div className="toolbar-actions">
-          {/* New Clear Button */}
-          <button 
-            className="btn btn-clear" 
-            onClick={clearAllImages} 
+          <button
+            className="btn btn-clear"
+            onClick={clearAllImages}
             disabled={!hasImages || busy}
-            style={{ 
-              backgroundColor: hasImages ? "#d9534f" : "#ccc", 
+            style={{
+              backgroundColor: hasImages ? "#d9534f" : "#ccc",
               color: "#fff",
-              cursor: hasImages ? "pointer" : "not-allowed" 
+              cursor: hasImages ? "pointer" : "not-allowed"
             }}
           >
             مسح الكل
           </button>
-          
+
           <button className="btn btn-pdf" onClick={exportPDF} disabled={busy}>
             {busy ? "جاري التصدير..." : "تصدير PDF"}
           </button>
@@ -183,23 +185,35 @@ export default function App() {
             <span className="title-text">صــور من داخـــل الموقـــع</span>
           </div>
 
-          <div className="slots">
-            {slots.map((src, i) => (
-              <div
-                key={i}
-                className="slot"
-                style={{ backgroundColor: NAVY }}
-                onClick={() => !src && openPicker()}
-              >
-                {src ? (
-                  <>
+          {/* If there are exactly two images, change wrapper layout to center them cleanly */}
+          <div
+            className="slots"
+            style={isExactlyTwo ? {
+              display: "flex",
+              flexDirection: "column",
+              justifyContent: "center",
+              boxSizing: "border-box",
+              gap: "50px"
+            } : undefined}
+          >
+            {isExactlyTwo ? (
+              // Case: Exactly 2 images are loaded. Map over filtered items directly.
+              uploadedImages.map((src, i) => {
+                // Find original index in master array to let single-image features work flawlessly
+                const originalIndex = slots.indexOf(src);
+                return (
+                  <div
+                    key={i}
+                    className="slot"
+                    style={{ backgroundColor: NAVY, height: "300px" }}
+                  >
                     <div className="slot-img" style={{ backgroundImage: `url(${src})` }} />
                     <div className="slot-overlay" data-html2canvas-ignore="true">
                       <button
                         className="ov-btn"
                         onClick={(e) => {
                           e.stopPropagation();
-                          changeSingleImage(i);
+                          changeSingleImage(originalIndex);
                         }}
                       >
                         تغيير
@@ -208,21 +222,57 @@ export default function App() {
                         className="ov-btn ov-del"
                         onClick={(e) => {
                           e.stopPropagation();
-                          removeImage(i);
+                          removeImage(originalIndex);
                         }}
                       >
                         حذف
                       </button>
                     </div>
-                  </>
-                ) : (
-                  <div className="slot-hint" data-html2canvas-ignore="true">
-                    <span className="plus">＋</span>
-                    <span>اضغط لرفع الصور</span>
                   </div>
-                )}
-              </div>
-            ))}
+                );
+              })
+            ) : (
+              // Default Case: 0, 1, or 3 items (Keeps original grid layout architecture intact)
+              slots.map((src, i) => (
+                <div
+                  key={i}
+                  className="slot"
+                  style={{ backgroundColor: NAVY }}
+                  onClick={() => !src && openPicker()}
+                >
+                  {src ? (
+                    <>
+                      <div className="slot-img" style={{ backgroundImage: `url(${src})` }} />
+                      <div className="slot-overlay" data-html2canvas-ignore="true">
+                        <button
+                          className="ov-btn"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            changeSingleImage(i);
+                          }}
+                        >
+                          تغيير
+                        </button>
+                        <button
+                          className="ov-btn ov-del"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            removeImage(i);
+                          }}
+                        >
+                          حذف
+                        </button>
+                      </div>
+                    </>
+                  ) : (
+                    <div className="slot-hint" data-html2canvas-ignore="true">
+                      <span className="plus">＋</span>
+                      <span>اضغط لرفع الصور</span>
+                    </div>
+                  )}
+                </div>
+              ))
+            )}
           </div>
 
           <div className="bottom-bar" />

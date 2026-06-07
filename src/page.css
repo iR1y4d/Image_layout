@@ -5,7 +5,7 @@
 }
 
 :root {
-  --navy: #0d3a54;
+  --navy: #054265;
 }
 
 body {
@@ -36,7 +36,7 @@ body {
 }
 
 .toolbar-title {
-  color: #0d3a54;
+  color: #054265;
   font-size: 26px;
   font-weight: 800;
 }
@@ -80,7 +80,7 @@ body {
 }
 
 .btn-png {
-  background: #0d3a54;
+  background: #054265;
 }
 
 /* ---------- Page scaler ---------- */
@@ -198,7 +198,7 @@ body {
 .slot {
   position: relative;
   width: 100%;
-  height: 30.5%;
+  height: 260px;
   border-radius: 26px;
   cursor: pointer;
   overflow: hidden;
@@ -259,7 +259,7 @@ body {
   font-weight: 700;
   cursor: pointer;
   background: #fff;
-  color: #0d3a54;
+  color: #054265;
 }
 
 .ov-del {
@@ -273,7 +273,7 @@ body {
   left: 0;
   right: 0;
   bottom: 0;
-  height: 70px;
+  height: 65px;
   background: var(--navy);
   z-index: 2;
 }
